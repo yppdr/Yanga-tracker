@@ -127,11 +127,32 @@ class _YangaHomePageState extends State<YangaHomePage> {
 
   void _startTimer() {
     _timer?.cancel();
-    _timer = Timer.periodic(Duration(seconds: 1), (timer) {
+    _timer = Timer.periodic(Duration(seconds: 1), (timer) async {
       if (_nextTime == null || _nextTime!.isBefore(DateTime.now())) {
         timer.cancel();
+
+        // Alerte sonore et vibrante immédiate
+        await flutterLocalNotificationsPlugin.show(
+          1,
+          'Yanga prête !',
+          'Tu peux boire ta prochaine Yanga maintenant.',
+          const NotificationDetails(
+            android: AndroidNotificationDetails(
+              'yanga_alert',
+              'Yanga Alerte',
+              importance: Importance.max,
+              priority: Priority.high,
+              playSound: true,
+              enableVibration: true,
+            ),
+            iOS: DarwinNotificationDetails(presentSound: true),
+          ),
+        );
+
+        setState(() {});
+      } else {
+        setState(() {});
       }
-      setState(() {});
     });
   }
 
@@ -150,13 +171,20 @@ class _YangaHomePageState extends State<YangaHomePage> {
   }
 
   String _remainingTime() {
-    if (_nextTime == null) return 'Prêt pour une Yanga';
+    if (_nextTime == null) return 'Prêt pour du Yanga';
     final diff = _nextTime!.difference(DateTime.now());
-    if (diff.isNegative) return 'Prêt pour une Yanga';
+    if (diff.isNegative) return 'Prêt pour du Yanga';
     final hours = diff.inHours.toString().padLeft(2, '0');
     final min = diff.inMinutes.remainder(60).toString().padLeft(2, '0');
     final sec = diff.inSeconds.remainder(60).toString().padLeft(2, '0');
     return 'Prochaine Yanga dans $min:$sec';
+  }
+
+  String _nextTimeFormatted() {
+    if (_nextTime == null || _nextTime!.isBefore(DateTime.now())) return '';
+    final hour = _nextTime!.hour.toString().padLeft(2, '0');
+    final minute = _nextTime!.minute.toString().padLeft(2, '0');
+    return 'Prochaine prise possible à $hour:$minute';
   }
 
   @override
@@ -191,10 +219,13 @@ class _YangaHomePageState extends State<YangaHomePage> {
             ),
             ElevatedButton(
               onPressed: _addEntry,
-              child: Text('Ajouter une Yanga'),
+              child: Text('Ajouter du Yanga'),
             ),
             SizedBox(height: 20),
             Text(_remainingTime(), style: TextStyle(fontSize: 18)),
+            SizedBox(height: 4),
+            Text(_nextTimeFormatted(), style: TextStyle(fontSize: 14, color: Colors.grey)),
+
             Divider(height: 40),
             Expanded(
               child: ListView.builder(
